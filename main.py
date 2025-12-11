@@ -6,7 +6,7 @@ from typing import List
 from flask_marshmallow import Marshmallow
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:1234@localhost/ma_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:1234@localhost/library_db'
 
 class Base(DeclarativeBase):
     pass
@@ -55,6 +55,15 @@ class Book(Base):
     
     loans: Mapped[List['Loan']] = db.relationship(secondary=loan_book, back_populates='books')
 
-with app.app_context():
-    db.create_all()
+# ==========SCHEMAS==========
+class MemberSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Member #using the SQLAlchemy model to create fields used in serialization, deserialization, and validation
+    
+member_schema =MemberSchema()
+members_schema = MemberSchema(many=True) #variant that allows for the serialization of many Users,
+
+
+# with app.app_context():
+#     db.create_all()
 app.run(debug=True)
