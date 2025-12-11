@@ -102,6 +102,25 @@ def get_member(member_id):
         return member_schema.jsonify(member), 200
     return jsonify({"error": "Member not found."}), 404
 
+#UPDATE SPECIFIC USER
+@app.route("/members/<int:member_id>", methods=['PUT'])
+def update_member(member_id):
+    member = db.session.get(Member, member_id)
+
+    if not member:
+        return jsonify({"error": "Member not found."}), 404
+    
+    try:
+        member_data = member_schema.load(request.json)
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    for key, value in member_data.items():
+        setattr(member, key, value)
+
+    db.session.commit()
+    return member_schema.jsonify(member), 200
+
 # with app.app_context():
 #     db.create_all()
 app.run(debug=True)
