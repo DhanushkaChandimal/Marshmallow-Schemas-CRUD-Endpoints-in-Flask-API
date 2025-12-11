@@ -1,9 +1,11 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from datetime import date
 from typing import List
 from flask_marshmallow import Marshmallow
+from marshmallow import ValidationError
+from sqlalchemy import select
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:1234@localhost/library_db'
@@ -41,7 +43,7 @@ class Loan(Base):
     loan_date: Mapped[date] = mapped_column(db.Date)
     member_id: Mapped[int] = mapped_column(db.ForeignKey('members.id'))
 
-    member: Mapped['Member'] = db.relationship(back_populates='loan')
+    member: Mapped['Member'] = db.relationship(back_populates='loans')
     books: Mapped[List['Book']] = db.relationship(secondary=loan_book, back_populates='loans')
     
 class Book(Base):
@@ -63,7 +65,26 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
 member_schema =MemberSchema()
 members_schema = MemberSchema(many=True) #variant that allows for the serialization of many Users,
 
+# ==========ROUTES==========
 
-# with app.app_context():
-#     db.create_all()
+# CREATE MEMBER
+@app.route("/members", methods=['POST'])
+def create_member():
+    try:
+        member_data = member_schema.load(request.json)
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    query = select(Member).where(Member.email == member_data['email'])
+    existing_member = db.session.execute(query).scalars().all()
+    
+    if(existing_member): return jsonify({"error": "Email already used"}), 400
+    
+    new_member = Member(**member_data)
+    db.session.add(new_member)
+    db.session.commit()
+    return member_schema.jsonify(new_member), 201
+
+with app.app_context():
+    db.create_all()
 app.run(debug=True)
