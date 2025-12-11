@@ -85,6 +85,14 @@ def create_member():
     db.session.commit()
     return member_schema.jsonify(new_member), 201
 
-with app.app_context():
-    db.create_all()
+#GET ALL MEMBERS
+@app.route("/members", methods=['GET'])
+def get_members():
+    query = select(Member)
+    members = db.session.execute(query).scalars().all()
+
+    return members_schema.jsonify(members)
+
+# with app.app_context():
+#     db.create_all()
 app.run(debug=True)
