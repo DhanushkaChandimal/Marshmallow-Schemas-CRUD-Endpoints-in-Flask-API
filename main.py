@@ -93,6 +93,15 @@ def get_members():
 
     return members_schema.jsonify(members)
 
+#GET SPECIFIC MEMBER
+@app.route("/members/<int:member_id>", methods=['GET'])
+def get_member(member_id):
+    member = db.session.get(Member, member_id)
+
+    if member:
+        return member_schema.jsonify(member), 200
+    return jsonify({"error": "Member not found."}), 404
+
 # with app.app_context():
 #     db.create_all()
 app.run(debug=True)
